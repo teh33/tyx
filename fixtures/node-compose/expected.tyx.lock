@@ -2,8 +2,8 @@
 lock 1
 
 tools:
-node requested 22
-npm requested 10.9.0
+node requested 22 status present version v22.13.1 provider path
+npm requested 10.9.0 status present version 10.9.0 provider path
 
 services:
 compose file compose.yaml

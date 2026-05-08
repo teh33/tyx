@@ -13,6 +13,7 @@ cleanup() {
 cleanup
 trap cleanup EXIT
 mkdir -p bin
+export PATH="$PWD/fixtures/bin:$PATH"
 odin check src
 odin build src -out:bin/tyx
 ./bin/tyx init fixtures/node-basic >/tmp/tyx-basic.out

@@ -2,8 +2,8 @@
 lock 1
 
 tools:
-node requested 22
-pnpm requested 9.15.0
+node requested 22 status present version v22.13.1 provider path
+pnpm requested 9.15.0 status present version 9.15.0 provider path
 
 env:
 example .env.example

@@ -52,16 +52,26 @@ print_parsed_config :: proc(cfg: Project_Config) {
     print_script_groups(cfg)
 }
 
-print_up_success :: proc(cfg: Project_Config) {
+print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool) {
     fmt.println("Tyx prepared this repo")
     fmt.println("")
     fmt.println("Wrote")
     fmt.println("  ✓ tyx.lock")
 
-    if len(cfg.tools) > 0 {
+    if len(resolved_tools) > 0 {
         fmt.println("")
         fmt.println("Tools")
-        for t in cfg.tools do fmt.printf("  ✓ %s %s requested\n", t.name, t.version)
+        for t in resolved_tools {
+            if t.status == "present" {
+                fmt.printf("  ✓ %s %s present", t.name, t.requested)
+                if t.version != "" do fmt.printf(" (%s)", t.version)
+                fmt.println("")
+            } else if t.status == "missing" {
+                fmt.printf("  ! %s %s missing\n", t.name, t.requested)
+            } else {
+                fmt.printf("  ! %s %s unsupported\n", t.name, t.requested)
+            }
+        }
     }
 
     if len(cfg.compose_files) > 0 {
@@ -78,6 +88,7 @@ print_up_success :: proc(cfg: Project_Config) {
     }
 
     print_script_groups(cfg)
+    print_tool_fixes(resolved_tools)
 
     fmt.println("")
     fmt.println("Ready")
@@ -95,5 +106,22 @@ print_script_groups :: proc(cfg: Project_Config) {
         fmt.println("")
         fmt.printf("Scripts %s\n", group.runner)
         for s in group.scripts do fmt.printf("  ✓ %s\n", s)
+    }
+}
+
+print_tool_fixes :: proc(resolved_tools: []Resolved_Tool) {
+    printed := false
+    for t in resolved_tools {
+        if t.status == "present" do continue
+        if !printed {
+            fmt.println("")
+            fmt.println("Fix")
+            printed = true
+        }
+        if t.status == "missing" {
+            fmt.printf("  Install %s %s or make it available on PATH.\n", t.name, t.requested)
+        } else {
+            fmt.printf("  Tool %s is not supported by Tyx tool detection yet.\n", t.name)
+        }
     }
 }
