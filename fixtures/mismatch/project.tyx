@@ -1,0 +1,5 @@
+project:
+
+tools:
+node 20
+pnpm 10

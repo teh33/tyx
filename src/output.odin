@@ -63,8 +63,12 @@ print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool) {
         fmt.println("")
         fmt.println("Tools")
         for t in resolved_tools {
-            if t.status == "present" {
+            if t.status == "present" && t.matches {
                 fmt.printf("  ✓ %s %s present", t.name, t.requested)
+                if t.version != "" do fmt.printf(" (%s)", t.version)
+                fmt.println("")
+            } else if t.status == "present" {
+                fmt.printf("  ! %s %s mismatch", t.name, t.requested)
                 if t.version != "" do fmt.printf(" (%s)", t.version)
                 fmt.println("")
             } else if t.status == "missing" {
@@ -113,7 +117,7 @@ print_script_groups :: proc(cfg: Project_Config) {
 print_tool_fixes :: proc(resolved_tools: []Resolved_Tool) {
     printed := false
     for t in resolved_tools {
-        if t.status == "present" do continue
+        if t.status == "present" && t.matches do continue
         if !printed {
             fmt.println("")
             fmt.println("Fix")

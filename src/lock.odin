@@ -13,6 +13,7 @@ render_lock :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool) -> str
         for t in resolved_tools {
             strings.write_string(&b, fmt.tprintf("%s requested %s status %s", t.name, t.requested, t.status))
             if t.version != "" do strings.write_string(&b, fmt.tprintf(" version %s", t.version))
+            if t.status == "present" do strings.write_string(&b, fmt.tprintf(" matches %v", t.matches))
             if t.provider != "" do strings.write_string(&b, fmt.tprintf(" provider %s", t.provider))
             strings.write_string(&b, "\n")
         }

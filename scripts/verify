@@ -9,7 +9,8 @@ cleanup() {
     fixtures/node-compose/project.tyx \
     fixtures/node-compose/tyx.lock \
     fixtures/node-version/project.tyx \
-    fixtures/node-version/tyx.lock
+    fixtures/node-version/tyx.lock \
+    fixtures/mismatch/tyx.lock
 }
 
 cleanup
@@ -33,6 +34,10 @@ grep -q "Multiple package manager lockfiles" /tmp/tyx-multi-lock.out
 diff -u fixtures/node-basic/expected.tyx.lock fixtures/node-basic/tyx.lock
 ./bin/tyx up fixtures/node-compose >/tmp/tyx-up-compose.out
 diff -u fixtures/node-compose/expected.tyx.lock fixtures/node-compose/tyx.lock
+./bin/tyx up fixtures/mismatch >/tmp/tyx-up-mismatch.out
+diff -u fixtures/mismatch/expected.tyx.lock fixtures/mismatch/tyx.lock
+grep -q "node 20 mismatch" /tmp/tyx-up-mismatch.out
+grep -q "Use node 20; found v22.13.1 on PATH." /tmp/tyx-up-mismatch.out
 ./bin/tyx parse fixtures/node-basic/project.tyx >/tmp/tyx-parse.out
 ./bin/tyx run echo hello >/tmp/tyx-run.out
 grep -q hello /tmp/tyx-run.out
