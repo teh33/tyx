@@ -41,14 +41,15 @@ cmd_up :: proc(path: string) -> bool {
     resolved_tools := resolve_tools(cfg)
     compose_checks := check_compose_files(path, cfg)
     env_checks := check_env_files(path, cfg)
+    dependency_checks := check_dependencies(path, cfg)
     lock_path := join2(path, "tyx.lock")
-    lock := render_lock(cfg, resolved_tools[:], compose_checks[:], env_checks[:])
+    lock := render_lock(cfg, resolved_tools[:], compose_checks[:], env_checks[:], dependency_checks[:])
     if err := os.write_entire_file(lock_path, lock); err != nil {
         fmt.printf("Fix\n  Could not write %s: %v\n", lock_path, err)
         return false
     }
 
-    print_up_success(cfg, resolved_tools[:], compose_checks[:], env_checks[:])
+    print_up_success(cfg, resolved_tools[:], compose_checks[:], env_checks[:], dependency_checks[:])
     return true
 }
 

@@ -53,7 +53,7 @@ print_parsed_config :: proc(cfg: Project_Config) {
     print_script_groups(cfg)
 }
 
-print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool, compose_checks: []File_Check, env_checks: []File_Check) {
+print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool, compose_checks: []File_Check, env_checks: []File_Check, dependency_checks: []Dependency_Check) {
     fmt.println("Tyx prepared this repo")
     fmt.println("")
     fmt.println("Wrote")
@@ -103,8 +103,20 @@ print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool, c
         }
     }
 
+    if len(dependency_checks) > 0 {
+        fmt.println("")
+        fmt.println("Dependencies")
+        for c in dependency_checks {
+            if c.status == "present" {
+                fmt.printf("  ✓ %s dependencies present (%s)\n", c.runner, c.path)
+            } else {
+                fmt.printf("  ! %s dependencies missing (%s)\n", c.runner, c.path)
+            }
+        }
+    }
+
     print_script_groups(cfg)
-    print_fixes(resolved_tools, compose_checks, env_checks)
+    print_fixes(resolved_tools, compose_checks, env_checks, dependency_checks)
 
     fmt.println("")
     fmt.println("Ready")
@@ -125,7 +137,7 @@ print_script_groups :: proc(cfg: Project_Config) {
     }
 }
 
-print_fixes :: proc(resolved_tools: []Resolved_Tool, compose_checks: []File_Check, env_checks: []File_Check) {
+print_fixes :: proc(resolved_tools: []Resolved_Tool, compose_checks: []File_Check, env_checks: []File_Check, dependency_checks: []Dependency_Check) {
     printed := false
     for t in resolved_tools {
         if t.status == "present" && t.matches do continue
@@ -165,5 +177,15 @@ print_fixes :: proc(resolved_tools: []Resolved_Tool, compose_checks: []File_Chec
         } else {
             fmt.printf("  Restore env example %s or remove it from project.tyx.\n", c.path)
         }
+    }
+
+    for c in dependency_checks {
+        if c.status == "present" do continue
+        if !printed {
+            fmt.println("")
+            fmt.println("Fix")
+            printed = true
+        }
+        fmt.printf("  Run %s install to create %s.\n", c.runner, c.path)
     }
 }

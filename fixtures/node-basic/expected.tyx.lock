@@ -8,6 +8,9 @@ pnpm requested 9.15.0 status present version 9.15.0 matches true provider path
 env:
 example .env.example status present
 
+dependencies:
+pnpm manifest package.json path node_modules status missing
+
 scripts pnpm:
 dev
 test

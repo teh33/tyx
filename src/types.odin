@@ -24,6 +24,13 @@ Tool :: struct {
     version: string,
 }
 
+Dependency_Check :: struct {
+    runner:   string,
+    manifest: string,
+    path:     string,
+    status:   string,
+}
+
 Repo_Info :: struct {
     node:                    string,
     package_manager:         string,

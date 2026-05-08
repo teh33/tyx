@@ -12,6 +12,9 @@ compose file compose.override.yaml status present
 env:
 example .env.example status present
 
+dependencies:
+npm manifest package.json path node_modules status missing
+
 scripts npm:
 dev
 test

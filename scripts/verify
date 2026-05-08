@@ -11,7 +11,8 @@ cleanup() {
     fixtures/node-version/project.tyx \
     fixtures/node-version/tyx.lock \
     fixtures/mismatch/tyx.lock \
-    fixtures/missing-files/tyx.lock
+    fixtures/missing-files/tyx.lock \
+    fixtures/deps-present/tyx.lock
 }
 
 cleanup
@@ -43,6 +44,10 @@ grep -q "Use node 20; found v22.13.1 on PATH." /tmp/tyx-up-mismatch.out
 diff -u fixtures/missing-files/expected.tyx.lock fixtures/missing-files/tyx.lock
 grep -q "compose missing.compose.yaml missing" /tmp/tyx-up-missing-files.out
 grep -q "Create .env or remove it from project.tyx." /tmp/tyx-up-missing-files.out
+./bin/tyx up fixtures/deps-present >/tmp/tyx-up-deps-present.out
+diff -u fixtures/deps-present/expected.tyx.lock fixtures/deps-present/tyx.lock
+grep -q "npm dependencies present" /tmp/tyx-up-deps-present.out
+grep -q "pnpm dependencies missing" /tmp/tyx-up-basic.out
 ./bin/tyx parse fixtures/node-basic/project.tyx >/tmp/tyx-parse.out
 ./bin/tyx run echo hello >/tmp/tyx-run.out
 grep -q hello /tmp/tyx-run.out
