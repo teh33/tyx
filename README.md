@@ -48,6 +48,11 @@ db:migrate
 
 Indented and unindented entries parse the same.
 
+## Docs
+
+- `docs/project-tyx-language.md` — MVP `project.tyx` syntax.
+- `docs/tyx-lock.md` — MVP `tyx.lock` semantics.
+
 ## Status
 
 Early Odin spike. Current working commands:

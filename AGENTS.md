@@ -14,7 +14,7 @@ Launch target: ordinary Node/TypeScript repos on macOS and Linux. Keep the inter
 
 ## Build and verify
 
-Use Odin. Verify before reporting success:
+Use Odin. See `docs/demo.odin` for code examples. Verify before reporting success:
 
 ```sh
 ./scripts/verify
