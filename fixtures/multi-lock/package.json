@@ -1,0 +1,7 @@
+{
+  "name": "multi-lock",
+  "private": true,
+  "scripts": {
+    "dev": "node index.js"
+  }
+}

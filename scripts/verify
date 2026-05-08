@@ -7,7 +7,9 @@ cleanup() {
     fixtures/node-basic/project.tyx \
     fixtures/node-basic/tyx.lock \
     fixtures/node-compose/project.tyx \
-    fixtures/node-compose/tyx.lock
+    fixtures/node-compose/tyx.lock \
+    fixtures/node-version/project.tyx \
+    fixtures/node-version/tyx.lock
 }
 
 cleanup
@@ -20,6 +22,13 @@ odin build src -out:bin/tyx
 diff -u fixtures/node-basic/expected.project.tyx fixtures/node-basic/project.tyx
 ./bin/tyx init fixtures/node-compose >/tmp/tyx-compose.out
 diff -u fixtures/node-compose/expected.project.tyx fixtures/node-compose/project.tyx
+./bin/tyx init fixtures/node-version >/tmp/tyx-node-version.out
+diff -u fixtures/node-version/expected.project.tyx fixtures/node-version/project.tyx
+if ./bin/tyx init fixtures/multi-lock >/tmp/tyx-multi-lock.out 2>&1; then
+  echo "expected multi-lock fixture to fail" >&2
+  exit 1
+fi
+grep -q "Multiple package manager lockfiles" /tmp/tyx-multi-lock.out
 ./bin/tyx up fixtures/node-basic >/tmp/tyx-up-basic.out
 diff -u fixtures/node-basic/expected.tyx.lock fixtures/node-basic/tyx.lock
 ./bin/tyx up fixtures/node-compose >/tmp/tyx-up-compose.out

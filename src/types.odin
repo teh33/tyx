@@ -31,4 +31,5 @@ Repo_Info :: struct {
     scripts:                 [dynamic]string,
     compose_files:           [dynamic]string,
     has_env_example:         bool,
+    has_env_file:            bool,
 }

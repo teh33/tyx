@@ -1,0 +1,11 @@
+project:
+
+tools:
+node 20
+npm 10.9.0
+
+env:
+file .env
+
+scripts npm:
+dev

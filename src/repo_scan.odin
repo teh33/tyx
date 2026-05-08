@@ -46,8 +46,11 @@ scan_repo :: proc(path: string) -> (Repo_Info, bool) {
     scan_scripts(root_obj, &info)
     scan_compose_files(path, &info)
     info.has_env_example = os.is_file(join2(path, ".env.example"))
+    info.has_env_file = os.is_file(join2(path, ".env"))
 
-    if info.package_manager == "" do infer_package_manager_from_lockfiles(path, &info)
+    if info.package_manager == "" {
+        if !infer_package_manager_from_lockfiles(path, &info) do return info, false
+    }
     return info, true
 }
 
@@ -76,6 +79,13 @@ scan_node_version :: proc(path: string, root: json.Object, info: ^Repo_Info) {
     nvm_path := join2(path, ".nvmrc")
     if os.is_file(nvm_path) {
         nb, _ := os.read_entire_file(nvm_path, context.allocator)
+        n := choose_node_major(strings.trim_space(string(nb)))
+        if n != "" do info.node = n
+    }
+
+    node_version_path := join2(path, ".node-version")
+    if os.is_file(node_version_path) {
+        nb, _ := os.read_entire_file(node_version_path, context.allocator)
         n := choose_node_major(strings.trim_space(string(nb)))
         if n != "" do info.node = n
     }
@@ -125,20 +135,30 @@ scan_compose_files :: proc(path: string, info: ^Repo_Info) {
     }
 }
 
-infer_package_manager_from_lockfiles :: proc(path: string, info: ^Repo_Info) {
-    if os.is_file(join2(path, "pnpm-lock.yaml")) {
-        info.package_manager = "pnpm"
-        info.package_manager_version = "latest"
-    } else if os.is_file(join2(path, "yarn.lock")) {
-        info.package_manager = "yarn"
-        info.package_manager_version = "latest"
-    } else if os.is_file(join2(path, "bun.lock")) || os.is_file(join2(path, "bun.lockb")) {
-        info.package_manager = "bun"
+infer_package_manager_from_lockfiles :: proc(path: string, info: ^Repo_Info) -> bool {
+    detected: [dynamic]string
+    if os.is_file(join2(path, "pnpm-lock.yaml")) do append(&detected, "pnpm")
+    if os.is_file(join2(path, "yarn.lock")) do append(&detected, "yarn")
+    if os.is_file(join2(path, "bun.lock")) || os.is_file(join2(path, "bun.lockb")) do append(&detected, "bun")
+    if os.is_file(join2(path, "package-lock.json")) do append(&detected, "npm")
+
+    if len(detected) > 1 {
+        fmt.println("Fix")
+        fmt.println("  Multiple package manager lockfiles detected:")
+        for name in detected do fmt.printf("    %s\n", name)
+        fmt.println("")
+        fmt.println("  Remove stale lockfiles or add packageManager to package.json.")
+        return false
+    }
+
+    if len(detected) == 1 {
+        info.package_manager = detected[0]
         info.package_manager_version = "latest"
     } else {
         info.package_manager = "npm"
         info.package_manager_version = "latest"
     }
+    return true
 }
 
 parse_package_manager :: proc(pm: string, info: ^Repo_Info) {

@@ -16,9 +16,10 @@ render_project :: proc(info: Repo_Info) -> string {
         for f in info.compose_files do strings.write_string(&b, fmt.tprintf("compose %s\n", f))
     }
 
-    if info.has_env_example {
+    if info.has_env_example || info.has_env_file {
         strings.write_string(&b, "\nenv:\n")
-        strings.write_string(&b, "example .env.example\n")
+        if info.has_env_example do strings.write_string(&b, "example .env.example\n")
+        if info.has_env_file do strings.write_string(&b, "file .env\n")
     }
 
     if len(info.scripts) > 0 {

@@ -1,0 +1,8 @@
+{
+  "name": "node-version",
+  "private": true,
+  "packageManager": "npm@10.9.0",
+  "scripts": {
+    "dev": "node index.js"
+  }
+}

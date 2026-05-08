@@ -23,6 +23,7 @@ print_init_success :: proc(info: Repo_Info) {
     if info.package_manager != "" do fmt.printf("  ✓ %-4s %-15s package.json#packageManager\n", info.package_manager, info.package_manager_version)
     for f in info.compose_files do fmt.printf("  ✓ compose             %s\n", f)
     if info.has_env_example do fmt.println("  ✓ env example         .env.example")
+    if info.has_env_file do fmt.println("  ✓ env file            .env")
     if len(info.scripts) > 0 do fmt.printf("  ✓ scripts             %s\n", join_display(info.scripts[:]))
     fmt.println("")
     fmt.println("Next")
