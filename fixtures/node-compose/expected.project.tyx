@@ -1,0 +1,16 @@
+project:
+
+tools:
+node 22
+npm 10.9.0
+
+services:
+compose compose.yaml
+compose compose.override.yaml
+
+env:
+example .env.example
+
+scripts npm:
+dev
+test

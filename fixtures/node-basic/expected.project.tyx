@@ -1,0 +1,16 @@
+project:
+
+tools:
+node 22
+pnpm 9.15.0
+
+env:
+example .env.example
+
+scripts pnpm:
+dev
+test
+lint
+build
+db:migrate
+"dev server"

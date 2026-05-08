@@ -1,0 +1,16 @@
+{
+  "name": "node-basic",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest",
+    "lint": "eslint .",
+    "build": "vite build",
+    "db:migrate": "prisma migrate dev",
+    "dev server": "vite --host 0.0.0.0"
+  }
+}

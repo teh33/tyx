@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+rm -f fixtures/node-basic/project.tyx fixtures/node-compose/project.tyx
+odin check src
+odin build src -out:bin/tyx
+./bin/tyx init fixtures/node-basic >/tmp/tyx-basic.out
+diff -u fixtures/node-basic/expected.project.tyx fixtures/node-basic/project.tyx
+./bin/tyx init fixtures/node-compose >/tmp/tyx-compose.out
+diff -u fixtures/node-compose/expected.project.tyx fixtures/node-compose/project.tyx
+./bin/tyx up fixtures/node-basic >/tmp/tyx-up-basic.out
+diff -u fixtures/node-basic/expected.tyx.lock fixtures/node-basic/tyx.lock
+./bin/tyx up fixtures/node-compose >/tmp/tyx-up-compose.out
+diff -u fixtures/node-compose/expected.tyx.lock fixtures/node-compose/tyx.lock
+./bin/tyx parse fixtures/node-basic/project.tyx >/tmp/tyx-parse.out
+./bin/tyx run echo hello >/tmp/tyx-run.out
+grep -q hello /tmp/tyx-run.out
+echo "verify ok"
