@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-rm -f fixtures/node-basic/project.tyx fixtures/node-compose/project.tyx
+
+cleanup() {
+  rm -f \
+    fixtures/node-basic/project.tyx \
+    fixtures/node-basic/tyx.lock \
+    fixtures/node-compose/project.tyx \
+    fixtures/node-compose/tyx.lock
+}
+
+cleanup
+trap cleanup EXIT
+mkdir -p bin
 odin check src
 odin build src -out:bin/tyx
 ./bin/tyx init fixtures/node-basic >/tmp/tyx-basic.out
