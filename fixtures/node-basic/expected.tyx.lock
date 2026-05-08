@@ -6,7 +6,7 @@ node requested 22 status present version v22.13.1 matches true provider path
 pnpm requested 9.15.0 status present version 9.15.0 matches true provider path
 
 env:
-example .env.example
+example .env.example status present
 
 scripts pnpm:
 dev

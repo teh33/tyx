@@ -53,7 +53,7 @@ print_parsed_config :: proc(cfg: Project_Config) {
     print_script_groups(cfg)
 }
 
-print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool) {
+print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool, compose_checks: []File_Check, env_checks: []File_Check) {
     fmt.println("Tyx prepared this repo")
     fmt.println("")
     fmt.println("Wrote")
@@ -79,21 +79,32 @@ print_up_success :: proc(cfg: Project_Config, resolved_tools: []Resolved_Tool) {
         }
     }
 
-    if len(cfg.compose_files) > 0 {
+    if len(compose_checks) > 0 {
         fmt.println("")
         fmt.println("Services")
-        for f in cfg.compose_files do fmt.printf("  ✓ compose %s\n", f)
+        for c in compose_checks {
+            if c.status == "present" {
+                fmt.printf("  ✓ compose %s\n", c.path)
+            } else {
+                fmt.printf("  ! compose %s missing\n", c.path)
+            }
+        }
     }
 
-    if len(cfg.env_examples) > 0 || len(cfg.env_files) > 0 {
+    if len(env_checks) > 0 {
         fmt.println("")
         fmt.println("Env")
-        for f in cfg.env_examples do fmt.printf("  ✓ example %s\n", f)
-        for f in cfg.env_files do fmt.printf("  ✓ file %s\n", f)
+        for c in env_checks {
+            if c.status == "present" {
+                fmt.printf("  ✓ %s %s\n", c.kind, c.path)
+            } else {
+                fmt.printf("  ! %s %s missing\n", c.kind, c.path)
+            }
+        }
     }
 
     print_script_groups(cfg)
-    print_tool_fixes(resolved_tools)
+    print_fixes(resolved_tools, compose_checks, env_checks)
 
     fmt.println("")
     fmt.println("Ready")
@@ -114,7 +125,7 @@ print_script_groups :: proc(cfg: Project_Config) {
     }
 }
 
-print_tool_fixes :: proc(resolved_tools: []Resolved_Tool) {
+print_fixes :: proc(resolved_tools: []Resolved_Tool, compose_checks: []File_Check, env_checks: []File_Check) {
     printed := false
     for t in resolved_tools {
         if t.status == "present" && t.matches do continue
@@ -125,8 +136,34 @@ print_tool_fixes :: proc(resolved_tools: []Resolved_Tool) {
         }
         if t.status == "missing" {
             fmt.printf("  Install %s %s or make it available on PATH.\n", t.name, t.requested)
+        } else if t.status == "present" {
+            fmt.printf("  Use %s %s; found %s on PATH.\n", t.name, t.requested, t.version)
         } else {
             fmt.printf("  Tool %s is not supported by Tyx tool detection yet.\n", t.name)
+        }
+    }
+
+    for c in compose_checks {
+        if c.status == "present" do continue
+        if !printed {
+            fmt.println("")
+            fmt.println("Fix")
+            printed = true
+        }
+        fmt.printf("  Restore compose file %s or remove it from project.tyx.\n", c.path)
+    }
+
+    for c in env_checks {
+        if c.status == "present" do continue
+        if !printed {
+            fmt.println("")
+            fmt.println("Fix")
+            printed = true
+        }
+        if c.kind == "file" {
+            fmt.printf("  Create %s or remove it from project.tyx.\n", c.path)
+        } else {
+            fmt.printf("  Restore env example %s or remove it from project.tyx.\n", c.path)
         }
     }
 }

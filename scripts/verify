@@ -10,7 +10,8 @@ cleanup() {
     fixtures/node-compose/tyx.lock \
     fixtures/node-version/project.tyx \
     fixtures/node-version/tyx.lock \
-    fixtures/mismatch/tyx.lock
+    fixtures/mismatch/tyx.lock \
+    fixtures/missing-files/tyx.lock
 }
 
 cleanup
@@ -38,6 +39,10 @@ diff -u fixtures/node-compose/expected.tyx.lock fixtures/node-compose/tyx.lock
 diff -u fixtures/mismatch/expected.tyx.lock fixtures/mismatch/tyx.lock
 grep -q "node 20 mismatch" /tmp/tyx-up-mismatch.out
 grep -q "Use node 20; found v22.13.1 on PATH." /tmp/tyx-up-mismatch.out
+./bin/tyx up fixtures/missing-files >/tmp/tyx-up-missing-files.out
+diff -u fixtures/missing-files/expected.tyx.lock fixtures/missing-files/tyx.lock
+grep -q "compose missing.compose.yaml missing" /tmp/tyx-up-missing-files.out
+grep -q "Create .env or remove it from project.tyx." /tmp/tyx-up-missing-files.out
 ./bin/tyx parse fixtures/node-basic/project.tyx >/tmp/tyx-parse.out
 ./bin/tyx run echo hello >/tmp/tyx-run.out
 grep -q hello /tmp/tyx-run.out

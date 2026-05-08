@@ -1,0 +1,11 @@
+project:
+
+tools:
+node 22
+
+services:
+compose missing.compose.yaml
+
+env:
+example missing.env.example
+file .env

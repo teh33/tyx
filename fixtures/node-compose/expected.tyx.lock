@@ -6,11 +6,11 @@ node requested 22 status present version v22.13.1 matches true provider path
 npm requested 10.9.0 status present version 10.9.0 matches true provider path
 
 services:
-compose file compose.yaml
-compose file compose.override.yaml
+compose file compose.yaml status present
+compose file compose.override.yaml status present
 
 env:
-example .env.example
+example .env.example status present
 
 scripts npm:
 dev
