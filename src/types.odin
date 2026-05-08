@@ -11,8 +11,12 @@ Project_Config :: struct {
     compose_files: [dynamic]string,
     env_examples:  [dynamic]string,
     env_files:     [dynamic]string,
-    script_runner: string,
-    scripts:       [dynamic]string,
+    script_groups: [dynamic]Script_Group,
+}
+
+Script_Group :: struct {
+    runner:  string,
+    scripts: [dynamic]string,
 }
 
 Tool :: struct {

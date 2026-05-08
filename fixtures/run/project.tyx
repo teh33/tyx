@@ -1,0 +1,5 @@
+project:
+
+scripts echo:
+hello
+"hello world"

@@ -26,4 +26,8 @@ diff -u fixtures/node-compose/expected.tyx.lock fixtures/node-compose/tyx.lock
 ./bin/tyx parse fixtures/node-basic/project.tyx >/tmp/tyx-parse.out
 ./bin/tyx run echo hello >/tmp/tyx-run.out
 grep -q hello /tmp/tyx-run.out
+./bin/tyx run --path fixtures/run hello >/tmp/tyx-run-script.out
+grep -q hello /tmp/tyx-run-script.out
+./bin/tyx run --path fixtures/run "hello world" >/tmp/tyx-run-quoted-script.out
+grep -q "hello world" /tmp/tyx-run-quoted-script.out
 echo "verify ok"

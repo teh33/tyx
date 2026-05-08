@@ -64,8 +64,17 @@ load_project_config :: proc(path: string) -> (Project_Config, bool) {
     return cfg, true
 }
 
-cmd_run :: proc(command: []string) -> bool {
-    desc := os.Process_Desc{command = command}
+cmd_run :: proc(path: string, args: []string) -> bool {
+    command := args
+    project_path := join2(path, "project.tyx")
+    if os.is_file(project_path) {
+        cfg, ok := load_project_config(project_path)
+        if ok {
+            if resolved, found := resolve_script(cfg, args[0]); found do command = resolved
+        }
+    }
+
+    desc := os.Process_Desc{command = command, working_dir = path}
     state, stdout, stderr, err := os.process_exec(desc, context.allocator)
     if err != nil {
         fmt.printf("Fix\n  Could not run command: %v\n", err)

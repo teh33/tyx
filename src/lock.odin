@@ -24,9 +24,10 @@ render_lock :: proc(cfg: Project_Config) -> string {
         for f in cfg.env_files do strings.write_string(&b, fmt.tprintf("file %s\n", f))
     }
 
-    if len(cfg.scripts) > 0 {
-        strings.write_string(&b, fmt.tprintf("\nscripts %s:\n", cfg.script_runner))
-        for s in cfg.scripts do strings.write_string(&b, fmt.tprintf("%s\n", quote_if_needed(s)))
+    for group in cfg.script_groups {
+        if len(group.scripts) == 0 do continue
+        strings.write_string(&b, fmt.tprintf("\nscripts %s:\n", group.runner))
+        for s in group.scripts do strings.write_string(&b, fmt.tprintf("%s\n", quote_if_needed(s)))
     }
 
     return strings.to_string(b)

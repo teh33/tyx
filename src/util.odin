@@ -29,3 +29,24 @@ join_display :: proc(items: []string) -> string {
     }
     return strings.to_string(b)
 }
+
+first_script :: proc(cfg: Project_Config) -> (string, bool) {
+    for group in cfg.script_groups {
+        if len(group.scripts) > 0 do return group.scripts[0], true
+    }
+    return "", false
+}
+
+resolve_script :: proc(cfg: Project_Config, name: string) -> ([]string, bool) {
+    for group in cfg.script_groups {
+        for script in group.scripts {
+            if script == name {
+                command := make([]string, 2)
+                command[0] = group.runner
+                command[1] = name
+                return command, true
+            }
+        }
+    }
+    return nil, false
+}

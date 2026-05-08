@@ -5,10 +5,12 @@
 /bin/
 
 # Tyx generated files from local fixture/manual runs
-project.tyx
-tyx.lock
-fixtures/**/project.tyx
-fixtures/**/tyx.lock
+/project.tyx
+/tyx.lock
+fixtures/node-basic/project.tyx
+fixtures/node-basic/tyx.lock
+fixtures/node-compose/project.tyx
+fixtures/node-compose/tyx.lock
 
 # Editor/local temp files
 *.swp

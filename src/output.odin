@@ -7,8 +7,9 @@ print_usage :: proc() {
     fmt.println("")
     fmt.println("Usage")
     fmt.println("  tyx init [path]")
+    fmt.println("  tyx up [path]")
     fmt.println("  tyx parse [project.tyx]")
-    fmt.println("  tyx run <command> [args...]")
+    fmt.println("  tyx run [--path <path>] <script|command> [args...]")
 }
 
 print_init_success :: proc(info: Repo_Info) {
@@ -48,11 +49,7 @@ print_parsed_config :: proc(cfg: Project_Config) {
         for f in cfg.env_files do fmt.printf("  ✓ file %s\n", f)
     }
 
-    if len(cfg.scripts) > 0 {
-        fmt.println("")
-        fmt.printf("Scripts %s\n", cfg.script_runner)
-        for s in cfg.scripts do fmt.printf("  ✓ %s\n", s)
-    }
+    print_script_groups(cfg)
 }
 
 print_up_success :: proc(cfg: Project_Config) {
@@ -80,17 +77,23 @@ print_up_success :: proc(cfg: Project_Config) {
         for f in cfg.env_files do fmt.printf("  ✓ file %s\n", f)
     }
 
-    if len(cfg.scripts) > 0 {
-        fmt.println("")
-        fmt.printf("Scripts %s\n", cfg.script_runner)
-        for s in cfg.scripts do fmt.printf("  ✓ %s\n", s)
-    }
+    print_script_groups(cfg)
 
     fmt.println("")
     fmt.println("Ready")
-    if len(cfg.scripts) > 0 {
-        fmt.printf("  tyx run %s\n", quote_if_needed(cfg.scripts[0]))
+    script, ok := first_script(cfg)
+    if ok {
+        fmt.printf("  tyx run %s\n", quote_if_needed(script))
     } else {
         fmt.println("  project.tyx parsed successfully")
+    }
+}
+
+print_script_groups :: proc(cfg: Project_Config) {
+    for group in cfg.script_groups {
+        if len(group.scripts) == 0 do continue
+        fmt.println("")
+        fmt.printf("Scripts %s\n", group.runner)
+        for s in group.scripts do fmt.printf("  ✓ %s\n", s)
     }
 }

@@ -126,10 +126,29 @@ config_from_entries :: proc(entries: []Entry) -> Project_Config {
                 if e.tokens[0] == "file" do append(&cfg.env_files, e.tokens[1])
             }
         case "scripts":
-            if len(e.header) >= 2 do cfg.script_runner = e.header[1]
-            if len(e.tokens) >= 1 do append(&cfg.scripts, e.tokens[0])
+            if len(e.header) >= 2 && len(e.tokens) >= 1 {
+                add_script(&cfg, e.header[1], e.tokens[0])
+            }
         }
     }
 
     return cfg
+}
+
+add_script :: proc(cfg: ^Project_Config, runner, script: string) {
+    idx := find_script_group(cfg, runner)
+    if idx < 0 {
+        group := Script_Group{runner = runner}
+        append(&group.scripts, script)
+        append(&cfg.script_groups, group)
+        return
+    }
+    append(&cfg.script_groups[idx].scripts, script)
+}
+
+find_script_group :: proc(cfg: ^Project_Config, runner: string) -> int {
+    for group, i in cfg.script_groups {
+        if group.runner == runner do return i
+    }
+    return -1
 }
