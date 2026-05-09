@@ -14,23 +14,6 @@ Project_Config :: struct {
 	script_groups: [dynamic]Script_Group,
 }
 
-Script_Group :: struct {
-	runner:  string,
-	scripts: [dynamic]string,
-}
-
-Tool :: struct {
-	name:    string,
-	version: string,
-}
-
-Dependency_Check :: struct {
-	runner:   string,
-	manifest: string,
-	path:     string,
-	status:   string,
-}
-
 Repo_Info :: struct {
 	node:                    string,
 	package_manager:         string,
@@ -48,4 +31,21 @@ Up_State :: struct {
 	dependencies:  [dynamic]Dependency_Check,
 	install_ok:    bool,
 	compose_ok:    bool,
+}
+
+Script_Group :: struct {
+	runner:  string,
+	scripts: [dynamic]string,
+}
+
+Tool :: struct {
+	name:    string,
+	version: string,
+}
+
+Dependency_Check :: struct {
+	runner:   string,
+	manifest: string,
+	path:     string,
+	status:   string,
 }

@@ -3,6 +3,10 @@ package main
 import "core:fmt"
 import "core:os"
 
+DEFAULT_PROJECT_PATH :: "."
+DEFAULT_PARSE_PATH :: "project.tyx"
+RUN_PATH_FLAG :: "--path"
+
 main :: proc() {
 	args := os.args
 	if len(args) < 2 {
@@ -17,13 +21,13 @@ main :: proc() {
 dispatch :: proc(args: []string) -> bool {
 	switch args[1] {
 	case "init":
-		return cmd_init(command_path_arg(args, "."))
+		return cmd_init(command_path_arg(args, DEFAULT_PROJECT_PATH))
 	case "up":
-		return cmd_up(command_path_arg(args, "."))
+		return cmd_up(command_path_arg(args, DEFAULT_PROJECT_PATH))
 	case "down":
-		return cmd_down(command_path_arg(args, "."))
+		return cmd_down(command_path_arg(args, DEFAULT_PROJECT_PATH))
 	case "parse":
-		return cmd_parse(command_path_arg(args, "project.tyx"))
+		return cmd_parse(command_path_arg(args, DEFAULT_PARSE_PATH))
 	case "run":
 		return dispatch_run(args)
 	case:
@@ -40,15 +44,17 @@ command_path_arg :: proc(args: []string, default_path: string) -> string {
 }
 
 dispatch_run :: proc(args: []string) -> bool {
-	path := "."
-	first_arg := 2
-	if len(args) >= 4 && args[2] == "--path" {
-		path = args[3]
-		first_arg = 4
-	}
+	path, first_arg := run_args(args)
 	if len(args) <= first_arg {
 		fmt.println("Fix\n  Usage: tyx run [--path <path>] <script|command> [args...]")
 		return false
 	}
 	return cmd_run(path, args[first_arg:])
+}
+
+run_args :: proc(args: []string) -> (string, int) {
+	if len(args) >= 4 && args[2] == RUN_PATH_FLAG {
+		return args[3], 4
+	}
+	return DEFAULT_PROJECT_PATH, 2
 }
