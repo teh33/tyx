@@ -81,20 +81,20 @@ validate_header :: proc(tokens: []string, line: int, seen_project: ^bool) -> boo
 	}
 	section := tokens[0]
 	switch section {
-	case "project":
+	case SECTION_PROJECT:
 		if len(tokens) != 1 {
 			fmt.printf("Fix\n  `project:` does not accept qualifiers on line %d.\n", line)
 			return false
 		}
 		seen_project^ = true
-	case "tools", "services", "env":
+	case SECTION_TOOLS, SECTION_SERVICES, SECTION_ENV:
 		if len(tokens) != 1 {
 			fmt.printf("Unsupported\n  Qualified `%s` section on line %d is not supported yet.\n", section, line)
 			fmt.println("")
 			fmt.printf("Fix\n  Use `%s:` without qualifiers for the MVP.\n", section)
 			return false
 		}
-	case "scripts":
+	case SECTION_SCRIPTS:
 		if len(tokens) != 2 {
 			fmt.printf("Fix\n  `scripts` section on line %d needs exactly one runner.\n", line)
 			fmt.println("")
@@ -122,16 +122,16 @@ validate_entry :: proc(header, tokens: []string, line: int) -> bool {
 	}
 	section := header[0]
 	switch section {
-	case "project":
+	case SECTION_PROJECT:
 		fmt.printf("Fix\n  `project:` does not accept entries; found one on line %d.\n", line)
 		return false
-	case "tools":
+	case SECTION_TOOLS:
 		return validate_tool_entry(tokens, line)
-	case "services":
+	case SECTION_SERVICES:
 		return validate_service_entry(tokens, line)
-	case "env":
+	case SECTION_ENV:
 		return validate_env_entry(tokens, line)
-	case "scripts":
+	case SECTION_SCRIPTS:
 		return validate_script_entry(tokens, line)
 	}
 	return true
@@ -189,112 +189,6 @@ is_supported_runner :: proc(name: string) -> bool {
 	return is_supported_tool(name) || name == "echo"
 }
 
-has_unclosed_quote :: proc(line: string) -> bool {
-	in_quote := false
-	escaped := false
-	for c in line {
-		b := byte(c)
-		if escaped {
-			escaped = false
-			continue
-		}
-		if b == '\\' && in_quote {
-			escaped = true
-			continue
-		}
-		if b == '"' {
-			in_quote = !in_quote
-		}
-	}
-	return in_quote
-}
-
-is_header :: proc(line: string) -> bool {
-	in_quote := false
-	escaped := false
-	last_non_space := byte(0)
-	for c in line {
-		b := byte(c)
-		if escaped {
-			escaped = false
-			last_non_space = b
-			continue
-		}
-		if b == '\\' && in_quote {
-			escaped = true
-			last_non_space = b
-			continue
-		}
-		if b == '"' {
-			in_quote = !in_quote
-		}
-		if b != ' ' && b != '\t' {
-			last_non_space = b
-		}
-	}
-	return !in_quote && last_non_space == ':'
-}
-
-tokenize :: proc(line: string) -> ([]string, bool) {
-	tokens: [dynamic]string
-	i := 0
-	for i < len(line) {
-		for i < len(line) && is_space(line[i]) {
-			i += 1
-		}
-		if i >= len(line) {
-			break
-		}
-		if line[i] == '"' {
-			if !append_quoted_token(&tokens, line, &i) {
-				return tokens[:], false
-			}
-		} else {
-			append_bare_token(&tokens, line, &i)
-		}
-	}
-	return tokens[:], true
-}
-
-append_quoted_token :: proc(tokens: ^[dynamic]string, line: string, i: ^int) -> bool {
-	i^ += 1
-	builder := strings.builder_make()
-	for i^ < len(line) {
-		if line[i^] == '\\' && i^+1 < len(line) {
-			next := line[i^+1]
-			if next == '"' || next == '\\' {
-				strings.write_byte(&builder, next)
-				i^ += 2
-				continue
-			}
-		}
-		if line[i^] == '"' {
-			break
-		}
-		strings.write_byte(&builder, line[i^])
-		i^ += 1
-	}
-	if i^ >= len(line) {
-		fmt.println("Fix\n  Unterminated quoted token")
-		return false
-	}
-	append(tokens, strings.to_string(builder))
-	i^ += 1
-	return true
-}
-
-append_bare_token :: proc(tokens: ^[dynamic]string, line: string, i: ^int) {
-	start := i^
-	for i^ < len(line) && !is_space(line[i^]) {
-		i^ += 1
-	}
-	append(tokens, line[start:i^])
-}
-
-is_space :: proc(b: byte) -> bool {
-	return b == ' ' || b == '\t' || b == '\r'
-}
-
 config_from_entries :: proc(entries: []Entry) -> Project_Config {
 	cfg: Project_Config
 	for e in entries {
@@ -303,18 +197,18 @@ config_from_entries :: proc(entries: []Entry) -> Project_Config {
 		}
 		section := e.header[0]
 		switch section {
-		case "tools":
+		case SECTION_TOOLS:
 			append(&cfg.tools, Tool{name = e.tokens[0], version = e.tokens[1]})
-		case "services":
+		case SECTION_SERVICES:
 			append(&cfg.compose_files, e.tokens[1])
-		case "env":
+		case SECTION_ENV:
 			if e.tokens[0] == "example" {
 				append(&cfg.env_examples, e.tokens[1])
 			}
 			if e.tokens[0] == "file" {
 				append(&cfg.env_files, e.tokens[1])
 			}
-		case "scripts":
+		case SECTION_SCRIPTS:
 			add_script(&cfg, e.header[1], e.tokens[0])
 		}
 	}
