@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 cleanup() {
-  rm -f \
+  rm -rf \
     fixtures/node-basic/project.tyx \
     fixtures/node-basic/tyx.lock \
     fixtures/node-compose/project.tyx \
@@ -12,7 +12,9 @@ cleanup() {
     fixtures/node-version/tyx.lock \
     fixtures/mismatch/tyx.lock \
     fixtures/missing-files/tyx.lock \
-    fixtures/deps-present/tyx.lock
+    fixtures/deps-present/tyx.lock \
+    fixtures/node-basic/node_modules \
+    fixtures/node-compose/node_modules
 }
 
 cleanup
@@ -47,7 +49,8 @@ grep -q "Create .env or remove it from project.tyx." /tmp/tyx-up-missing-files.o
 ./bin/tyx up fixtures/deps-present >/tmp/tyx-up-deps-present.out
 diff -u fixtures/deps-present/expected.tyx.lock fixtures/deps-present/tyx.lock
 grep -q "npm dependencies present" /tmp/tyx-up-deps-present.out
-grep -q "pnpm dependencies missing" /tmp/tyx-up-basic.out
+grep -q "pnpm install complete" /tmp/tyx-up-basic.out
+grep -q "pnpm dependencies present" /tmp/tyx-up-basic.out
 
 # Negative parser/validation fixtures
 if ./bin/tyx parse fixtures/invalid/no-project.tyx >/tmp/tyx-invalid-no-project.out 2>&1; then

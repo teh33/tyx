@@ -13,7 +13,7 @@ env:
 example .env.example status present
 
 dependencies:
-npm manifest package.json path node_modules status missing
+npm manifest package.json path node_modules status present
 
 scripts npm:
 dev

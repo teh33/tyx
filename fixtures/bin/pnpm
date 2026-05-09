@@ -1,2 +1,7 @@
 #!/usr/bin/env sh
+if [ "${1:-}" = "install" ]; then
+  mkdir -p node_modules
+  echo "pnpm install complete"
+  exit 0
+fi
 echo 9.15.0

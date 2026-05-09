@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 if [ "${1:-}" = "install" ]; then
   mkdir -p node_modules
-  echo "npm install complete"
+  echo "bun install complete"
   exit 0
 fi
-echo 10.9.0
+echo 1.1.0

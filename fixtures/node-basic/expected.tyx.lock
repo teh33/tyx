@@ -9,7 +9,7 @@ env:
 example .env.example status present
 
 dependencies:
-pnpm manifest package.json path node_modules status missing
+pnpm manifest package.json path node_modules status present
 
 scripts pnpm:
 dev
