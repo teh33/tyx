@@ -3,67 +3,75 @@ package main
 import "core:fmt"
 import "core:strings"
 
+Parse_State :: struct {
+	entries:      [dynamic]Entry,
+	current:      []string,
+	seen_project: bool,
+}
+
 parse_tyx :: proc(input: string) -> ([dynamic]Entry, bool) {
-	entries: [dynamic]Entry
-	current: []string
-	seen_project := false
+	state: Parse_State
 	lines := strings.split(input, "\n")
-
 	for line, i in lines {
-		line_number := i + 1
-		trimmed := strings.trim_space(line)
-		if trimmed == "" {
-			continue
+		if !parse_line(&state, line, i+1) {
+			return state.entries, false
 		}
-		if strings.has_prefix(trimmed, "#") {
-			continue
-		}
-
-		if has_unclosed_quote(trimmed) {
-			fmt.printf("Fix\n  Unterminated quoted token on line %d.\n", line_number)
-			return entries, false
-		}
-
-		if is_header(trimmed) {
-			head := strings.trim_right(trimmed, ":")
-			tokens, ok := tokenize(head)
-			if !ok {
-				fmt.printf("Fix\n  Could not parse header on line %d.\n", line_number)
-				return entries, false
-			}
-			if !validate_header(tokens, line_number, &seen_project) {
-				return entries, false
-			}
-			current = tokens
-			continue
-		}
-
-		if len(current) == 0 {
-			fmt.printf("Fix\n  Entry before any section on line %d.\n", line_number)
-			fmt.println("\n  Add a section header such as `project:` or `tools:` before entries.")
-			return entries, false
-		}
-
-		tokens, ok := tokenize(trimmed)
-		if !ok {
-			fmt.printf("Fix\n  Could not parse entry on line %d.\n", line_number)
-			return entries, false
-		}
-		if !validate_entry(current, tokens, line_number) {
-			return entries, false
-		}
-		append(&entries, Entry{header = current, tokens = tokens, line = line_number})
 	}
-
-	if !seen_project {
+	if !state.seen_project {
 		fmt.println("Fix")
 		fmt.println("  project.tyx is missing the `project:` header.")
 		fmt.println("")
 		fmt.println("  Add `project:` near the top of the file.")
-		return entries, false
+		return state.entries, false
 	}
+	return state.entries, true
+}
 
-	return entries, true
+parse_line :: proc(state: ^Parse_State, line: string, line_number: int) -> bool {
+	trimmed := strings.trim_space(line)
+	if trimmed == "" || strings.has_prefix(trimmed, "#") {
+		return true
+	}
+	if has_unclosed_quote(trimmed) {
+		fmt.printf("Fix\n  Unterminated quoted token on line %d.\n", line_number)
+		return false
+	}
+	if is_header(trimmed) {
+		return parse_header(state, trimmed, line_number)
+	}
+	return parse_entry(state, trimmed, line_number)
+}
+
+parse_header :: proc(state: ^Parse_State, line: string, line_number: int) -> bool {
+	head := strings.trim_right(line, ":")
+	tokens, ok := tokenize(head)
+	if !ok {
+		fmt.printf("Fix\n  Could not parse header on line %d.\n", line_number)
+		return false
+	}
+	if !validate_header(tokens, line_number, &state.seen_project) {
+		return false
+	}
+	state.current = tokens
+	return true
+}
+
+parse_entry :: proc(state: ^Parse_State, line: string, line_number: int) -> bool {
+	if len(state.current) == 0 {
+		fmt.printf("Fix\n  Entry before any section on line %d.\n", line_number)
+		fmt.println("\n  Add a section header such as `project:` or `tools:` before entries.")
+		return false
+	}
+	tokens, ok := tokenize(line)
+	if !ok {
+		fmt.printf("Fix\n  Could not parse entry on line %d.\n", line_number)
+		return false
+	}
+	if !validate_entry(state.current, tokens, line_number) {
+		return false
+	}
+	append(&state.entries, Entry{header = state.current, tokens = tokens, line = line_number})
+	return true
 }
 
 validate_header :: proc(tokens: []string, line: int, seen_project: ^bool) -> bool {
@@ -71,7 +79,6 @@ validate_header :: proc(tokens: []string, line: int, seen_project: ^bool) -> boo
 		fmt.printf("Fix\n  Empty section header on line %d.\n", line)
 		return false
 	}
-
 	section := tokens[0]
 	switch section {
 	case "project":
@@ -106,7 +113,6 @@ validate_header :: proc(tokens: []string, line: int, seen_project: ^bool) -> boo
 		fmt.println("Fix\n  Use project:, tools:, services:, env:, or scripts <runner>:")
 		return false
 	}
-
 	return true
 }
 
@@ -114,46 +120,64 @@ validate_entry :: proc(header, tokens: []string, line: int) -> bool {
 	if len(tokens) == 0 {
 		return true
 	}
-
 	section := header[0]
 	switch section {
 	case "project":
 		fmt.printf("Fix\n  `project:` does not accept entries; found one on line %d.\n", line)
 		return false
 	case "tools":
-		if len(tokens) != 2 {
-			fmt.printf("Fix\n  Tool entry on line %d must be `<tool> <version>`.\n", line)
-			fmt.println("")
-			fmt.println("  Example: `node 22`")
-			return false
-		}
-		if !is_supported_tool(tokens[0]) {
-			fmt.printf("Unsupported\n  tool `%s` on line %d is not supported yet.\n", tokens[0], line)
-			fmt.println("")
-			fmt.println("Fix\n  Use node, npm, pnpm, yarn, or bun for the MVP.")
-			return false
-		}
+		return validate_tool_entry(tokens, line)
 	case "services":
-		if len(tokens) != 2 || tokens[0] != "compose" {
-			fmt.printf("Fix\n  Service entry on line %d must be `compose <file>`.\n", line)
-			fmt.println("")
-			fmt.println("  Example: `compose compose.yaml`")
-			return false
-		}
+		return validate_service_entry(tokens, line)
 	case "env":
-		if len(tokens) != 2 || (tokens[0] != "example" && tokens[0] != "file") {
-			fmt.printf("Fix\n  Env entry on line %d must be `example <file>` or `file <file>`.\n", line)
-			return false
-		}
+		return validate_env_entry(tokens, line)
 	case "scripts":
-		if len(tokens) != 1 {
-			fmt.printf("Fix\n  Script entry on line %d must be one script name.\n", line)
-			fmt.println("\n  Quote names that contain spaces, e.g. `\"dev server\"`.")
-			return false
-		}
+		return validate_script_entry(tokens, line)
 	}
-
 	return true
+}
+
+validate_tool_entry :: proc(tokens: []string, line: int) -> bool {
+	if len(tokens) != 2 {
+		fmt.printf("Fix\n  Tool entry on line %d must be `<tool> <version>`.\n", line)
+		fmt.println("")
+		fmt.println("  Example: `node 22`")
+		return false
+	}
+	if !is_supported_tool(tokens[0]) {
+		fmt.printf("Unsupported\n  tool `%s` on line %d is not supported yet.\n", tokens[0], line)
+		fmt.println("")
+		fmt.println("Fix\n  Use node, npm, pnpm, yarn, or bun for the MVP.")
+		return false
+	}
+	return true
+}
+
+validate_service_entry :: proc(tokens: []string, line: int) -> bool {
+	if len(tokens) == 2 && tokens[0] == "compose" {
+		return true
+	}
+	fmt.printf("Fix\n  Service entry on line %d must be `compose <file>`.\n", line)
+	fmt.println("")
+	fmt.println("  Example: `compose compose.yaml`")
+	return false
+}
+
+validate_env_entry :: proc(tokens: []string, line: int) -> bool {
+	if len(tokens) == 2 && (tokens[0] == "example" || tokens[0] == "file") {
+		return true
+	}
+	fmt.printf("Fix\n  Env entry on line %d must be `example <file>` or `file <file>`.\n", line)
+	return false
+}
+
+validate_script_entry :: proc(tokens: []string, line: int) -> bool {
+	if len(tokens) == 1 {
+		return true
+	}
+	fmt.printf("Fix\n  Script entry on line %d must be one script name.\n", line)
+	fmt.println("\n  Quote names that contain spaces, e.g. `\"dev server\"`.")
+	return false
 }
 
 is_supported_tool :: proc(name: string) -> bool {
@@ -189,7 +213,6 @@ is_header :: proc(line: string) -> bool {
 	in_quote := false
 	escaped := false
 	last_non_space := byte(0)
-
 	for c in line {
 		b := byte(c)
 		if escaped {
@@ -209,14 +232,12 @@ is_header :: proc(line: string) -> bool {
 			last_non_space = b
 		}
 	}
-
 	return !in_quote && last_non_space == ':'
 }
 
 tokenize :: proc(line: string) -> ([]string, bool) {
 	tokens: [dynamic]string
 	i := 0
-
 	for i < len(line) {
 		for i < len(line) && is_space(line[i]) {
 			i += 1
@@ -224,41 +245,50 @@ tokenize :: proc(line: string) -> ([]string, bool) {
 		if i >= len(line) {
 			break
 		}
-
 		if line[i] == '"' {
-			i += 1
-			b := strings.builder_make()
-			for i < len(line) {
-				if line[i] == '\\' && i+1 < len(line) {
-					next := line[i+1]
-					if next == '"' || next == '\\' {
-						strings.write_byte(&b, next)
-						i += 2
-						continue
-					}
-				}
-				if line[i] == '"' {
-					break
-				}
-				strings.write_byte(&b, line[i])
-				i += 1
-			}
-			if i >= len(line) {
-				fmt.println("Fix\n  Unterminated quoted token")
+			if !append_quoted_token(&tokens, line, &i) {
 				return tokens[:], false
 			}
-			append(&tokens, strings.to_string(b))
-			i += 1
 		} else {
-			start := i
-			for i < len(line) && !is_space(line[i]) {
-				i += 1
-			}
-			append(&tokens, line[start:i])
+			append_bare_token(&tokens, line, &i)
 		}
 	}
-
 	return tokens[:], true
+}
+
+append_quoted_token :: proc(tokens: ^[dynamic]string, line: string, i: ^int) -> bool {
+	i^ += 1
+	builder := strings.builder_make()
+	for i^ < len(line) {
+		if line[i^] == '\\' && i^+1 < len(line) {
+			next := line[i^+1]
+			if next == '"' || next == '\\' {
+				strings.write_byte(&builder, next)
+				i^ += 2
+				continue
+			}
+		}
+		if line[i^] == '"' {
+			break
+		}
+		strings.write_byte(&builder, line[i^])
+		i^ += 1
+	}
+	if i^ >= len(line) {
+		fmt.println("Fix\n  Unterminated quoted token")
+		return false
+	}
+	append(tokens, strings.to_string(builder))
+	i^ += 1
+	return true
+}
+
+append_bare_token :: proc(tokens: ^[dynamic]string, line: string, i: ^int) {
+	start := i^
+	for i^ < len(line) && !is_space(line[i^]) {
+		i^ += 1
+	}
+	append(tokens, line[start:i^])
 }
 
 is_space :: proc(b: byte) -> bool {
@@ -267,13 +297,11 @@ is_space :: proc(b: byte) -> bool {
 
 config_from_entries :: proc(entries: []Entry) -> Project_Config {
 	cfg: Project_Config
-
 	for e in entries {
 		if len(e.header) == 0 {
 			continue
 		}
 		section := e.header[0]
-
 		switch section {
 		case "tools":
 			append(&cfg.tools, Tool{name = e.tokens[0], version = e.tokens[1]})
@@ -290,7 +318,6 @@ config_from_entries :: proc(entries: []Entry) -> Project_Config {
 			add_script(&cfg, e.header[1], e.tokens[0])
 		}
 	}
-
 	return cfg
 }
 
