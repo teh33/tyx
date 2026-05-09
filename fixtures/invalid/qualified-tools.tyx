@@ -1,0 +1,4 @@
+project:
+
+tools darwin:
+watchman

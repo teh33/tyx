@@ -48,6 +48,44 @@ grep -q "Create .env or remove it from project.tyx." /tmp/tyx-up-missing-files.o
 diff -u fixtures/deps-present/expected.tyx.lock fixtures/deps-present/tyx.lock
 grep -q "npm dependencies present" /tmp/tyx-up-deps-present.out
 grep -q "pnpm dependencies missing" /tmp/tyx-up-basic.out
+
+# Negative parser/validation fixtures
+if ./bin/tyx parse fixtures/invalid/no-project.tyx >/tmp/tyx-invalid-no-project.out 2>&1; then
+  echo "expected no-project fixture to fail" >&2
+  exit 1
+fi
+grep -q 'missing the `project:` header' /tmp/tyx-invalid-no-project.out
+if ./bin/tyx parse fixtures/invalid/unknown-section.tyx >/tmp/tyx-invalid-unknown.out 2>&1; then
+  echo "expected unknown-section fixture to fail" >&2
+  exit 1
+fi
+grep -q 'section `wat`' /tmp/tyx-invalid-unknown.out
+if ./bin/tyx parse fixtures/invalid/malformed-tool.tyx >/tmp/tyx-invalid-tool.out 2>&1; then
+  echo "expected malformed-tool fixture to fail" >&2
+  exit 1
+fi
+grep -q 'must be `<tool> <version>`' /tmp/tyx-invalid-tool.out
+if ./bin/tyx parse fixtures/invalid/unsupported-tool.tyx >/tmp/tyx-invalid-unsupported-tool.out 2>&1; then
+  echo "expected unsupported-tool fixture to fail" >&2
+  exit 1
+fi
+grep -q 'tool `python`' /tmp/tyx-invalid-unsupported-tool.out
+if ./bin/tyx parse fixtures/invalid/qualified-tools.tyx >/tmp/tyx-invalid-qualified-tools.out 2>&1; then
+  echo "expected qualified-tools fixture to fail" >&2
+  exit 1
+fi
+grep -q 'Qualified `tools` section' /tmp/tyx-invalid-qualified-tools.out
+if ./bin/tyx parse fixtures/invalid/bad-script.tyx >/tmp/tyx-invalid-bad-script.out 2>&1; then
+  echo "expected bad-script fixture to fail" >&2
+  exit 1
+fi
+grep -q "Script entry" /tmp/tyx-invalid-bad-script.out
+if ./bin/tyx parse fixtures/invalid/bad-quote.tyx >/tmp/tyx-invalid-bad-quote.out 2>&1; then
+  echo "expected bad-quote fixture to fail" >&2
+  exit 1
+fi
+grep -q "Unterminated quoted token" /tmp/tyx-invalid-bad-quote.out
+
 ./bin/tyx parse fixtures/node-basic/project.tyx >/tmp/tyx-parse.out
 ./bin/tyx run echo hello >/tmp/tyx-run.out
 grep -q hello /tmp/tyx-run.out
