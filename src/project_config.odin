@@ -26,11 +26,11 @@ add_entry_to_config :: proc(cfg: ^Project_Config, entry: Entry) {
 }
 
 add_env_entry :: proc(cfg: ^Project_Config, kind, path: string) {
-	if kind == "example" {
+	if kind == ENTRY_ENV_EXAMPLE {
 		append(&cfg.env_examples, path)
 		return
 	}
-	if kind == "file" {
+	if kind == ENTRY_ENV_FILE {
 		append(&cfg.env_files, path)
 	}
 }
