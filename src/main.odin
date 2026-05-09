@@ -20,6 +20,10 @@ main :: proc() {
         path := "."
         if len(args) >= 3 do path = args[2]
         if !cmd_up(path) do os.exit(1)
+    case "down":
+        path := "."
+        if len(args) >= 3 do path = args[2]
+        if !cmd_down(path) do os.exit(1)
     case "parse":
         path := "project.tyx"
         if len(args) >= 3 do path = args[2]

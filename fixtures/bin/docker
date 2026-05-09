@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+if [ "${1:-}" = "compose" ]; then
+  shift
+  files=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -f)
+        files="$files $2"
+        shift 2
+        ;;
+      up)
+        shift
+        echo "docker compose up$files $*"
+        exit 0
+        ;;
+      down)
+        shift
+        echo "docker compose down$files $*"
+        exit 0
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+fi
+if [ "${1:-}" = "--version" ]; then
+  echo "Docker version fixture"
+  exit 0
+fi
+echo "unsupported docker fixture command: $*" >&2
+exit 1

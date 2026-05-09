@@ -40,3 +40,46 @@ install_missing_dependencies :: proc(root: string, dependency_checks: []Dependen
 
     return results, ok
 }
+
+compose_down :: proc(root: string, compose_checks: []File_Check) -> bool {
+    command := compose_command(compose_checks, "down")
+    if len(command) == 0 do return true
+
+    fmt.println("Stopping")
+    fmt.println("  → docker compose down")
+
+    desc := os.Process_Desc{command = command, working_dir = root}
+    state, stdout, stderr, err := os.process_exec(desc, context.allocator)
+    if len(stdout) > 0 do fmt.print(string(stdout))
+    if len(stderr) > 0 do fmt.eprint(string(stderr))
+    if err != nil || !state.exited || state.exit_code != 0 {
+        fmt.println("Fix")
+        fmt.println("  `docker compose down` failed. Resolve the Docker error and run `tyx down` again.")
+        return false
+    }
+    return true
+}
+
+compose_command :: proc(compose_checks: []File_Check, action: string) -> []string {
+    present_count := 0
+    for c in compose_checks {
+        if c.status == "present" do present_count += 1
+    }
+    if present_count == 0 do return nil
+
+    command := make([]string, 2 + present_count*2 + 1)
+    i := 0
+    command[i] = "docker"
+    i += 1
+    command[i] = "compose"
+    i += 1
+    for c in compose_checks {
+        if c.status != "present" do continue
+        command[i] = "-f"
+        i += 1
+        command[i] = c.path
+        i += 1
+    }
+    command[i] = action
+    return command
+}

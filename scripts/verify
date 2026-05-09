@@ -51,6 +51,10 @@ diff -u fixtures/deps-present/expected.tyx.lock fixtures/deps-present/tyx.lock
 grep -q "npm dependencies present" /tmp/tyx-up-deps-present.out
 grep -q "pnpm install complete" /tmp/tyx-up-basic.out
 grep -q "pnpm dependencies present" /tmp/tyx-up-basic.out
+./bin/tyx down fixtures/node-compose >/tmp/tyx-down-compose.out
+grep -q "docker compose down compose.yaml compose.override.yaml" /tmp/tyx-down-compose.out
+./bin/tyx down fixtures/run >/tmp/tyx-down-run.out
+grep -q "no runtime services declared" /tmp/tyx-down-run.out
 
 # Negative parser/validation fixtures
 if ./bin/tyx parse fixtures/invalid/no-project.tyx >/tmp/tyx-invalid-no-project.out 2>&1; then

@@ -26,6 +26,16 @@ cmd_init :: proc(path: string) -> bool {
     return true
 }
 
+cmd_down :: proc(path: string) -> bool {
+    project_path := join2(path, "project.tyx")
+    cfg, ok := load_project_config(project_path)
+    if !ok do return false
+
+    compose_checks := check_compose_files(path, cfg)
+    print_down_start(compose_checks[:])
+    return compose_down(path, compose_checks[:])
+}
+
 cmd_parse :: proc(path: string) -> bool {
     cfg, ok := load_project_config(path)
     if !ok do return false

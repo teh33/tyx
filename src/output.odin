@@ -8,6 +8,7 @@ print_usage :: proc() {
     fmt.println("Usage")
     fmt.println("  tyx init [path]")
     fmt.println("  tyx up [path]")
+    fmt.println("  tyx down [path]")
     fmt.println("  tyx parse [project.tyx]")
     fmt.println("  tyx run [--path <path>] <script|command> [args...]")
 }
@@ -187,5 +188,24 @@ print_fixes :: proc(resolved_tools: []Resolved_Tool, compose_checks: []File_Chec
             printed = true
         }
         fmt.printf("  Run %s install to create %s.\n", c.runner, c.path)
+    }
+}
+
+print_down_start :: proc(compose_checks: []File_Check) {
+    fmt.println("Tyx tearing down this repo")
+    if len(compose_checks) == 0 {
+        fmt.println("")
+        fmt.println("Ready")
+        fmt.println("  no runtime services declared")
+        return
+    }
+    fmt.println("")
+    fmt.println("Services")
+    for c in compose_checks {
+        if c.status == "present" {
+            fmt.printf("  ✓ compose %s\n", c.path)
+        } else {
+            fmt.printf("  ! compose %s missing\n", c.path)
+        }
     }
 }
