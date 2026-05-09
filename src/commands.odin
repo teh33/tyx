@@ -12,29 +12,35 @@ cmd_init :: proc(path: string) -> bool {
 		fmt.println("  Remove it before running tyx init again.")
 		return false
 	}
-
 	info, ok := scan_repo(path)
 	if !ok {
 		return false
 	}
-
-	config := render_project(info)
-	if err := os.write_entire_file(out_path, config); err != nil {
-		fmt.printf("Fix\n  Could not write %s: %v\n", out_path, err)
+	if !write_file(out_path, render_project(info)) {
 		return false
 	}
-
 	print_init_success(info)
 	return true
 }
 
-cmd_down :: proc(path: string) -> bool {
-	project_path := join2(path, "project.tyx")
-	cfg, ok := load_project_config(project_path)
+cmd_up :: proc(path: string) -> bool {
+	cfg, ok := load_project_config(join2(path, "project.tyx"))
 	if !ok {
 		return false
 	}
+	state := prepare_project(path, cfg)
+	if !write_file(join2(path, "tyx.lock"), render_lock(cfg, state.tools[:], state.compose_files[:], state.env_files[:], state.dependencies[:])) {
+		return false
+	}
+	print_up_success(cfg, state.tools[:], state.compose_files[:], state.env_files[:], state.dependencies[:])
+	return state.install_ok && state.compose_ok
+}
 
+cmd_down :: proc(path: string) -> bool {
+	cfg, ok := load_project_config(join2(path, "project.tyx"))
+	if !ok {
+		return false
+	}
 	compose_checks := check_compose_files(path, cfg)
 	print_down_start(compose_checks[:])
 	return compose_down(path, compose_checks[:])
@@ -49,29 +55,29 @@ cmd_parse :: proc(path: string) -> bool {
 	return true
 }
 
-cmd_up :: proc(path: string) -> bool {
-	project_path := join2(path, "project.tyx")
-	cfg, ok := load_project_config(project_path)
-	if !ok {
+cmd_run :: proc(path: string, args: []string) -> bool {
+	command := resolve_run_command(path, args)
+	if !run_command(command, path) {
+		fmt.println("Fix")
+		fmt.println("  Command failed.")
 		return false
 	}
+	return true
+}
 
-	resolved_tools := resolve_tools(cfg)
-	compose_checks := check_compose_files(path, cfg)
-	env_checks := check_env_files(path, cfg)
-	dependency_checks := check_dependencies(path, cfg)
-	_, install_ok := install_missing_dependencies(path, dependency_checks[:])
-	dependency_checks = check_dependencies(path, cfg)
-	compose_ok := compose_up(path, compose_checks[:])
-	lock_path := join2(path, "tyx.lock")
-	lock := render_lock(cfg, resolved_tools[:], compose_checks[:], env_checks[:], dependency_checks[:])
-	if err := os.write_entire_file(lock_path, lock); err != nil {
-		fmt.printf("Fix\n  Could not write %s: %v\n", lock_path, err)
-		return false
+prepare_project :: proc(path: string, cfg: Project_Config) -> Up_State {
+	state := Up_State{
+		tools = resolve_tools(cfg),
+		compose_files = check_compose_files(path, cfg),
+		env_files = check_env_files(path, cfg),
+		dependencies = check_dependencies(path, cfg),
+		install_ok = true,
+		compose_ok = true,
 	}
-
-	print_up_success(cfg, resolved_tools[:], compose_checks[:], env_checks[:], dependency_checks[:])
-	return install_ok && compose_ok
+	_, state.install_ok = install_missing_dependencies(path, state.dependencies[:])
+	state.dependencies = check_dependencies(path, cfg)
+	state.compose_ok = compose_up(path, state.compose_files[:])
+	return state
 }
 
 load_project_config :: proc(path: string) -> (Project_Config, bool) {
@@ -81,31 +87,29 @@ load_project_config :: proc(path: string) -> (Project_Config, bool) {
 		fmt.printf("Fix\n  Could not read %s: %v\n", path, err)
 		return cfg, false
 	}
-
 	entries, ok := parse_tyx(string(bytes))
 	if !ok {
 		return cfg, false
 	}
-
-	cfg = config_from_entries(entries[:])
-	return cfg, true
+	return config_from_entries(entries[:]), true
 }
 
-cmd_run :: proc(path: string, args: []string) -> bool {
-	command := args
+resolve_run_command :: proc(path: string, args: []string) -> []string {
 	project_path := join2(path, "project.tyx")
 	if os.is_file(project_path) {
 		cfg, ok := load_project_config(project_path)
 		if ok {
 			if resolved, found := resolve_script(cfg, args[0]); found {
-				command = resolved
+				return resolved
 			}
 		}
 	}
+	return args
+}
 
-	if !run_command(command, path) {
-		fmt.println("Fix")
-		fmt.println("  Command failed.")
+write_file :: proc(path, contents: string) -> bool {
+	if err := os.write_entire_file(path, contents); err != nil {
+		fmt.printf("Fix\n  Could not write %s: %v\n", path, err)
 		return false
 	}
 	return true

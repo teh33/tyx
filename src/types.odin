@@ -40,3 +40,12 @@ Repo_Info :: struct {
 	has_env_example:         bool,
 	has_env_file:            bool,
 }
+
+Up_State :: struct {
+	tools:         [dynamic]Resolved_Tool,
+	compose_files: [dynamic]File_Check,
+	env_files:     [dynamic]File_Check,
+	dependencies:  [dynamic]Dependency_Check,
+	install_ok:    bool,
+	compose_ok:    bool,
+}

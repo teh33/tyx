@@ -9,57 +9,46 @@ main :: proc() {
 		print_usage()
 		os.exit(1)
 	}
-
-	cmd := args[1]
-	switch cmd {
-	case "init":
-		path := "."
-		if len(args) >= 3 {
-			path = args[2]
-		}
-		if !cmd_init(path) {
-			os.exit(1)
-		}
-	case "up":
-		path := "."
-		if len(args) >= 3 {
-			path = args[2]
-		}
-		if !cmd_up(path) {
-			os.exit(1)
-		}
-	case "down":
-		path := "."
-		if len(args) >= 3 {
-			path = args[2]
-		}
-		if !cmd_down(path) {
-			os.exit(1)
-		}
-	case "parse":
-		path := "project.tyx"
-		if len(args) >= 3 {
-			path = args[2]
-		}
-		if !cmd_parse(path) {
-			os.exit(1)
-		}
-	case "run":
-		path := "."
-		first_arg := 2
-		if len(args) >= 4 && args[2] == "--path" {
-			path = args[3]
-			first_arg = 4
-		}
-		if len(args) <= first_arg {
-			fmt.println("Fix\n  Usage: tyx run [--path <path>] <script|command> [args...]")
-			os.exit(1)
-		}
-		if !cmd_run(path, args[first_arg:]) {
-			os.exit(1)
-		}
-	case:
-		print_usage()
+	if !dispatch(args) {
 		os.exit(1)
 	}
+}
+
+dispatch :: proc(args: []string) -> bool {
+	switch args[1] {
+	case "init":
+		return cmd_init(command_path_arg(args, "."))
+	case "up":
+		return cmd_up(command_path_arg(args, "."))
+	case "down":
+		return cmd_down(command_path_arg(args, "."))
+	case "parse":
+		return cmd_parse(command_path_arg(args, "project.tyx"))
+	case "run":
+		return dispatch_run(args)
+	case:
+		print_usage()
+		return false
+	}
+}
+
+command_path_arg :: proc(args: []string, default_path: string) -> string {
+	if len(args) >= 3 {
+		return args[2]
+	}
+	return default_path
+}
+
+dispatch_run :: proc(args: []string) -> bool {
+	path := "."
+	first_arg := 2
+	if len(args) >= 4 && args[2] == "--path" {
+		path = args[3]
+		first_arg = 4
+	}
+	if len(args) <= first_arg {
+		fmt.println("Fix\n  Usage: tyx run [--path <path>] <script|command> [args...]")
+		return false
+	}
+	return cmd_run(path, args[first_arg:])
 }
