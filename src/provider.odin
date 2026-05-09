@@ -31,15 +31,15 @@ resolve_tool :: proc(t: Tool) -> Resolved_Tool {
 		result.status = TOOL_STATUS_UNSUPPORTED
 		return result
 	}
-	state, stdout, stderr, err := run_command_capture(command)
-	if process_succeeded(state, err) {
+	process := run_command_capture(command)
+	if process_succeeded(process) {
 		result.status = TOOL_STATUS_PRESENT
-		result.version = first_line(string(stdout))
+		result.version = first_line(string(process.stdout))
 		result.matches = version_matches(t.version, result.version)
 		return result
 	}
-	if err == nil && len(stderr) > 0 {
-		result.version = first_line(string(stderr))
+	if process.err == nil && len(process.stderr) > 0 {
+		result.version = first_line(string(process.stderr))
 	}
 	return result
 }
