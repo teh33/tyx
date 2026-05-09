@@ -2,6 +2,9 @@ package main
 
 import "core:os"
 
+FILE_STATUS_PRESENT :: "present"
+FILE_STATUS_MISSING :: "missing"
+
 File_Check :: struct {
 	kind:   string,
 	path:   string,
@@ -10,33 +13,28 @@ File_Check :: struct {
 
 check_env_files :: proc(root: string, cfg: Project_Config) -> [dynamic]File_Check {
 	checks: [dynamic]File_Check
-	for f in cfg.env_examples {
-		status := "missing"
-		if os.is_file(join2(root, f)) {
-			status = "present"
-		}
-		append(&checks, File_Check{kind = "example", path = f, status = status})
-	}
-	for f in cfg.env_files {
-		status := "missing"
-		if os.is_file(join2(root, f)) {
-			status = "present"
-		}
-		append(&checks, File_Check{kind = "file", path = f, status = status})
-	}
+	append_file_checks(&checks, root, "example", cfg.env_examples[:])
+	append_file_checks(&checks, root, "file", cfg.env_files[:])
 	return checks
 }
 
 check_compose_files :: proc(root: string, cfg: Project_Config) -> [dynamic]File_Check {
 	checks: [dynamic]File_Check
-	for f in cfg.compose_files {
-		status := "missing"
-		if os.is_file(join2(root, f)) {
-			status = "present"
-		}
-		append(&checks, File_Check{kind = "compose", path = f, status = status})
-	}
+	append_file_checks(&checks, root, "compose", cfg.compose_files[:])
 	return checks
+}
+
+append_file_checks :: proc(checks: ^[dynamic]File_Check, root, kind: string, paths: []string) {
+	for path in paths {
+		append(checks, File_Check{kind = kind, path = path, status = file_status(root, path)})
+	}
+}
+
+file_status :: proc(root, path: string) -> string {
+	if os.is_file(join2(root, path)) {
+		return FILE_STATUS_PRESENT
+	}
+	return FILE_STATUS_MISSING
 }
 
 check_dependencies :: proc(root: string, cfg: Project_Config) -> [dynamic]Dependency_Check {
@@ -45,17 +43,25 @@ check_dependencies :: proc(root: string, cfg: Project_Config) -> [dynamic]Depend
 		if !is_node_runner(group.runner) {
 			continue
 		}
-		manifest := "package.json"
-		dependency_path := "node_modules"
-		status := "missing"
-		if os.is_file(join2(root, manifest)) && os.is_dir(join2(root, dependency_path)) {
-			status = "present"
-		}
-		append(&checks, Dependency_Check{runner = group.runner, manifest = manifest, path = dependency_path, status = status})
+		append(&checks, node_dependency_check(root, group.runner))
 	}
 	return checks
 }
 
+node_dependency_check :: proc(root, runner: string) -> Dependency_Check {
+	manifest := "package.json"
+	dependency_path := "node_modules"
+	status := FILE_STATUS_MISSING
+	if os.is_file(join2(root, manifest)) && os.is_dir(join2(root, dependency_path)) {
+		status = FILE_STATUS_PRESENT
+	}
+	return Dependency_Check{runner = runner, manifest = manifest, path = dependency_path, status = status}
+}
+
 is_node_runner :: proc(runner: string) -> bool {
-	return runner == "npm" || runner == "pnpm" || runner == "yarn" || runner == "bun"
+	switch runner {
+	case "npm", "pnpm", "yarn", "bun":
+		return true
+	}
+	return false
 }

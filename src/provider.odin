@@ -2,6 +2,11 @@ package main
 
 import "core:strings"
 
+TOOL_STATUS_PRESENT :: "present"
+TOOL_STATUS_MISSING :: "missing"
+TOOL_STATUS_UNSUPPORTED :: "unsupported"
+TOOL_PROVIDER_PATH :: "path"
+
 Resolved_Tool :: struct {
 	name:      string,
 	requested: string,
@@ -14,25 +19,29 @@ Resolved_Tool :: struct {
 resolve_tools :: proc(cfg: Project_Config) -> [dynamic]Resolved_Tool {
 	resolved: [dynamic]Resolved_Tool
 	for t in cfg.tools {
-		command := tool_version_command(t.name)
-		result := Resolved_Tool{name = t.name, requested = t.version, status = "missing", provider = "path"}
-		if len(command) == 0 {
-			result.status = "unsupported"
-			append(&resolved, result)
-			continue
-		}
-
-		state, stdout, stderr, err := run_command_capture(command)
-		if process_succeeded(state, err) {
-			result.status = "present"
-			result.version = first_line(string(stdout))
-			result.matches = version_matches(t.version, result.version)
-		} else if err == nil && len(stderr) > 0 {
-			result.version = first_line(string(stderr))
-		}
-		append(&resolved, result)
+		append(&resolved, resolve_tool(t))
 	}
 	return resolved
+}
+
+resolve_tool :: proc(t: Tool) -> Resolved_Tool {
+	result := Resolved_Tool{name = t.name, requested = t.version, status = TOOL_STATUS_MISSING, provider = TOOL_PROVIDER_PATH}
+	command := tool_version_command(t.name)
+	if len(command) == 0 {
+		result.status = TOOL_STATUS_UNSUPPORTED
+		return result
+	}
+	state, stdout, stderr, err := run_command_capture(command)
+	if process_succeeded(state, err) {
+		result.status = TOOL_STATUS_PRESENT
+		result.version = first_line(string(stdout))
+		result.matches = version_matches(t.version, result.version)
+		return result
+	}
+	if err == nil && len(stderr) > 0 {
+		result.version = first_line(string(stderr))
+	}
+	return result
 }
 
 tool_version_command :: proc(name: string) -> []string {
@@ -73,15 +82,19 @@ version_matches :: proc(requested, actual: string) -> bool {
 leading_major :: proc(s: string) -> (string, bool) {
 	trimmed := strings.trim_space(s)
 	i := 0
-	for i < len(trimmed) && (trimmed[i] < '0' || trimmed[i] > '9') {
+	for i < len(trimmed) && !is_digit(trimmed[i]) {
 		i += 1
 	}
 	start := i
-	for i < len(trimmed) && trimmed[i] >= '0' && trimmed[i] <= '9' {
+	for i < len(trimmed) && is_digit(trimmed[i]) {
 		i += 1
 	}
 	if start == i {
 		return "", false
 	}
 	return trimmed[start:i], true
+}
+
+is_digit :: proc(b: byte) -> bool {
+	return b >= '0' && b <= '9'
 }
