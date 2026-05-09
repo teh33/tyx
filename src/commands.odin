@@ -54,6 +54,7 @@ cmd_up :: proc(path: string) -> bool {
     dependency_checks := check_dependencies(path, cfg)
     _, install_ok := install_missing_dependencies(path, dependency_checks[:])
     dependency_checks = check_dependencies(path, cfg)
+    compose_ok := compose_up(path, compose_checks[:])
     lock_path := join2(path, "tyx.lock")
     lock := render_lock(cfg, resolved_tools[:], compose_checks[:], env_checks[:], dependency_checks[:])
     if err := os.write_entire_file(lock_path, lock); err != nil {
@@ -62,7 +63,7 @@ cmd_up :: proc(path: string) -> bool {
     }
 
     print_up_success(cfg, resolved_tools[:], compose_checks[:], env_checks[:], dependency_checks[:])
-    return install_ok
+    return install_ok && compose_ok
 }
 
 load_project_config :: proc(path: string) -> (Project_Config, bool) {

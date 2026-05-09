@@ -42,7 +42,7 @@ install_missing_dependencies :: proc(root: string, dependency_checks: []Dependen
 }
 
 compose_down :: proc(root: string, compose_checks: []File_Check) -> bool {
-    command := compose_command(compose_checks, "down")
+    command := compose_command(compose_checks, "down", false)
     if len(command) == 0 do return true
 
     fmt.println("Stopping")
@@ -60,14 +60,16 @@ compose_down :: proc(root: string, compose_checks: []File_Check) -> bool {
     return true
 }
 
-compose_command :: proc(compose_checks: []File_Check, action: string) -> []string {
+compose_command :: proc(compose_checks: []File_Check, action: string, detached: bool) -> []string {
     present_count := 0
     for c in compose_checks {
         if c.status == "present" do present_count += 1
     }
     if present_count == 0 do return nil
 
-    command := make([]string, 2 + present_count*2 + 1)
+    extra := 1
+    if detached do extra = 2
+    command := make([]string, 2 + present_count*2 + extra)
     i := 0
     command[i] = "docker"
     i += 1
@@ -81,5 +83,27 @@ compose_command :: proc(compose_checks: []File_Check, action: string) -> []strin
         i += 1
     }
     command[i] = action
+    i += 1
+    if detached do command[i] = "-d"
     return command
+}
+
+compose_up :: proc(root: string, compose_checks: []File_Check) -> bool {
+    command := compose_command(compose_checks, "up", true)
+    if len(command) == 0 do return true
+
+    fmt.println("")
+    fmt.println("Starting")
+    fmt.println("  → docker compose up -d")
+
+    desc := os.Process_Desc{command = command, working_dir = root}
+    state, stdout, stderr, err := os.process_exec(desc, context.allocator)
+    if len(stdout) > 0 do fmt.print(string(stdout))
+    if len(stderr) > 0 do fmt.eprint(string(stderr))
+    if err != nil || !state.exited || state.exit_code != 0 {
+        fmt.println("Fix")
+        fmt.println("  `docker compose up -d` failed. Resolve the Docker error and run `tyx up` again.")
+        return false
+    }
+    return true
 }

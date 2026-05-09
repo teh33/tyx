@@ -38,6 +38,7 @@ grep -q "Multiple package manager lockfiles" /tmp/tyx-multi-lock.out
 diff -u fixtures/node-basic/expected.tyx.lock fixtures/node-basic/tyx.lock
 ./bin/tyx up fixtures/node-compose >/tmp/tyx-up-compose.out
 diff -u fixtures/node-compose/expected.tyx.lock fixtures/node-compose/tyx.lock
+grep -q "docker compose up compose.yaml compose.override.yaml -d" /tmp/tyx-up-compose.out
 ./bin/tyx up fixtures/mismatch >/tmp/tyx-up-mismatch.out
 diff -u fixtures/mismatch/expected.tyx.lock fixtures/mismatch/tyx.lock
 grep -q "node 20 mismatch" /tmp/tyx-up-mismatch.out
