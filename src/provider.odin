@@ -1,6 +1,5 @@
 package main
 
-import "core:os"
 import "core:strings"
 
 Resolved_Tool :: struct {
@@ -23,9 +22,8 @@ resolve_tools :: proc(cfg: Project_Config) -> [dynamic]Resolved_Tool {
 			continue
 		}
 
-		desc := os.Process_Desc{command = command}
-		state, stdout, stderr, err := os.process_exec(desc, context.allocator)
-		if err == nil && state.exited && state.exit_code == 0 {
+		state, stdout, stderr, err := run_command_capture(command)
+		if process_succeeded(state, err) {
 			result.status = "present"
 			result.version = first_line(string(stdout))
 			result.matches = version_matches(t.version, result.version)

@@ -1,7 +1,6 @@
 package main
 
 import "core:fmt"
-import "core:os"
 
 Install_Result :: struct {
 	runner: string,
@@ -21,20 +20,8 @@ install_missing_dependencies :: proc(root: string, dependency_checks: []Dependen
 		fmt.println("Installing")
 		fmt.printf("  → %s install\n", c.runner)
 
-		command := make([]string, 2)
-		command[0] = c.runner
-		command[1] = "install"
-		desc := os.Process_Desc{command = command, working_dir = root}
-		state, stdout, stderr, err := os.process_exec(desc, context.allocator)
-
-		if len(stdout) > 0 {
-			fmt.print(string(stdout))
-		}
-		if len(stderr) > 0 {
-			fmt.eprint(string(stderr))
-		}
-
-		if err != nil || !state.exited || state.exit_code != 0 {
+		command := []string{c.runner, "install"}
+		if !run_command(command, root) {
 			fmt.printf("Fix\n  `%s install` failed. Resolve the package manager error and run `tyx up` again.\n", c.runner)
 			append(&results, Install_Result{runner = c.runner, status = "failed"})
 			ok = false
@@ -56,15 +43,7 @@ compose_down :: proc(root: string, compose_checks: []File_Check) -> bool {
 	fmt.println("Stopping")
 	fmt.println("  → docker compose down")
 
-	desc := os.Process_Desc{command = command, working_dir = root}
-	state, stdout, stderr, err := os.process_exec(desc, context.allocator)
-	if len(stdout) > 0 {
-		fmt.print(string(stdout))
-	}
-	if len(stderr) > 0 {
-		fmt.eprint(string(stderr))
-	}
-	if err != nil || !state.exited || state.exit_code != 0 {
+	if !run_command(command, root) {
 		fmt.println("Fix")
 		fmt.println("  `docker compose down` failed. Resolve the Docker error and run `tyx down` again.")
 		return false
@@ -120,15 +99,7 @@ compose_up :: proc(root: string, compose_checks: []File_Check) -> bool {
 	fmt.println("Starting")
 	fmt.println("  → docker compose up -d")
 
-	desc := os.Process_Desc{command = command, working_dir = root}
-	state, stdout, stderr, err := os.process_exec(desc, context.allocator)
-	if len(stdout) > 0 {
-		fmt.print(string(stdout))
-	}
-	if len(stderr) > 0 {
-		fmt.eprint(string(stderr))
-	}
-	if err != nil || !state.exited || state.exit_code != 0 {
+	if !run_command(command, root) {
 		fmt.println("Fix")
 		fmt.println("  `docker compose up -d` failed. Resolve the Docker error and run `tyx up` again.")
 		return false

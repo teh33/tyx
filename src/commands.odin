@@ -103,18 +103,10 @@ cmd_run :: proc(path: string, args: []string) -> bool {
 		}
 	}
 
-	desc := os.Process_Desc{command = command, working_dir = path}
-	state, stdout, stderr, err := os.process_exec(desc, context.allocator)
-	if err != nil {
-		fmt.printf("Fix\n  Could not run command: %v\n", err)
+	if !run_command(command, path) {
+		fmt.println("Fix")
+		fmt.println("  Command failed.")
 		return false
 	}
-
-	if len(stdout) > 0 {
-		fmt.print(string(stdout))
-	}
-	if len(stderr) > 0 {
-		fmt.eprint(string(stderr))
-	}
-	return state.exited && state.exit_code == 0
+	return true
 }
