@@ -16,7 +16,7 @@ tyx run dev    # run a script inside the Tyx environment
 
 ## Install / build
 
-Tyx is currently an early Zig implementation. Build from source:
+Build from source:
 
 ```sh
 zig build
@@ -31,7 +31,7 @@ Run the full local verification gate:
 ./scripts/verify
 ```
 
-Release binaries are planned for macOS and Linux. The Zig implementation supports small release builds with `zig build -Doptimize=ReleaseSmall`.
+Release binaries are planned for macOS and Linux.
 
 ## MVP commands
 
@@ -110,7 +110,7 @@ Try the MVP flow on the included fixture:
 
 ## Status
 
-Zig is now canonical. Current working commands:
+Current working commands:
 
 ```sh
 scripts/verify
@@ -126,4 +126,3 @@ zig build
 ./bin/tyx run echo hello
 ```
 
-Zig is the canonical implementation.
