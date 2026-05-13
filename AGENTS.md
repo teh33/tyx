@@ -14,7 +14,7 @@ Launch target: ordinary Node/TypeScript repos on macOS and Linux. Keep the inter
 
 ## Build and verify
 
-Use Odin. See `docs/demo.odin` for code examples. Verify before reporting success:
+Use Zig. Verify before reporting success:
 
 ```sh
 ./scripts/verify
@@ -35,12 +35,10 @@ The verify script builds `bin/tyx`, checks fixture goldens, runs `tyx up`, parse
 
 ## Source layout
 
-- `src/main.odin` — CLI dispatch
-- `src/commands.odin` — command implementations
-- `src/parser.odin` — `project.tyx` parser
-- `src/repo_scan.odin` — repo inference
-- `src/render.odin` — `project.tyx` rendering
-- `src/lock.odin` — `tyx.lock` rendering
-- `src/output.odin` — structured output
-- `src/types.odin` — shared structs
-- `src/util.odin` — small helpers
+- `src/main.zig` — CLI dispatch and command orchestration
+- `src/types.zig` — shared data model
+- `src/runtime.zig` — I/O, file, process, and path helpers
+- `src/parser.zig` — `project.tyx` parser
+- `src/repo_scan.zig` — repo inference
+- `src/render.zig` — `project.tyx` and `tyx.lock` rendering
+- `src/output.zig` — structured user-facing output

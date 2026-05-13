@@ -3,6 +3,8 @@
 
 # Build outputs
 /bin/
+/.zig-cache/
+/zig-out/
 
 # Tyx generated files from local fixture/manual runs
 /project.tyx
@@ -20,5 +22,3 @@ fixtures/node-compose/tyx.lock
 # Local agent/planning state
 .mana/
 
-# Local Odin reference scratch file
-/docs/demo.odin

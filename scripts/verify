@@ -21,8 +21,8 @@ cleanup
 trap cleanup EXIT
 mkdir -p bin
 export PATH="$PWD/fixtures/bin:$PATH"
-odin check src
-odin build src -out:bin/tyx
+zig build
+cp zig-out/bin/tyx-zig bin/tyx
 ./bin/tyx init fixtures/node-basic >/tmp/tyx-basic.out
 diff -u fixtures/node-basic/expected.project.tyx fixtures/node-basic/project.tyx
 ./bin/tyx init fixtures/node-compose >/tmp/tyx-compose.out
